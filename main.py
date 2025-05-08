@@ -1,41 +1,28 @@
-import os
-from timetable_reader import read_timetable
-from format_timetable import process_timetable
-from add_to_calendar import add_events_to_calendar
+from ocr_utils import extract_text_from_image, extract_schedule
+from calendar_utils import get_calendar_service, convert_to_datetime_range, add_event
+from datetime import datetime
 
 def main():
-    """
-    Main function to process a timetable and add it to Google Calendar.
-    """
-    # Prompt user to enter a file path
-    file_path = input("Enter the path of your timetable (CSV or image): ").strip()
+    name = input("Enter the name (e.g., LUU, M): ").strip()
+    image_path = "timetable.jpeg"
+    text = extract_text_from_image(image_path)
+    schedule = extract_schedule(text, name)
 
-    # Validate file existence
-    if not os.path.exists(file_path):
-        print("Error: File not found!")
+    if not schedule:
+        print("No schedule found for this name.")
         return
 
-    # Step 1: Read the timetable (CSV or Image)
-    raw_timetable = read_timetable(file_path)
+    print(f"Schedule for {name}:")
+    for day, hours in schedule.items():
+        print(f"{day}: {hours}")
 
-    if raw_timetable is None:
-        print("Error: Could not read timetable.")
-        return
+    service = get_calendar_service()
+    base_date = datetime.strptime("2025-04-07", "%Y-%m-%d")
 
-    # Step 2: Process and format timetable
-    formatted_timetable = process_timetable(raw_timetable)
-
-    if formatted_timetable is None or len(formatted_timetable) == 0:
-        print("Error: No valid events found in the timetable.")
-        return
-
-    # Step 3: Add events to Google Calendar
-    success = add_events_to_calendar(formatted_timetable)
-
-    if success:
-        print("✅ Timetable successfully added to Google Calendar!")
-    else:
-        print("❌ Failed to add events to Google Calendar.")
+    for day, time_str in schedule.items():
+        start, end = convert_to_datetime_range(day, time_str, base_date)
+        add_event(service, start, end, summary=f"{name} - {day} Shift")
+    print("✅ Calendar events added.")
 
 if __name__ == "__main__":
     main()
