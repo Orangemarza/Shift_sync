@@ -4,8 +4,9 @@ from datetime import datetime
 
 def main():
     name = input("Enter the name (e.g., LUU, M): ").strip()
-    image_path = "timetable.jpeg"
+    image_path = "timetable.jpg"
     text = extract_text_from_image(image_path)
+    print("OCR text printed:\n", text)
     schedule = extract_schedule(text, name)
 
     if not schedule:
